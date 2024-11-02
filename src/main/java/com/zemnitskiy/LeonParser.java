@@ -14,6 +14,10 @@ import retrofit2.Response;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 public class LeonParser {
@@ -42,8 +46,8 @@ public class LeonParser {
 
     public static void main(String[] args) {
         new LeonParser().processData();
+        System.exit(0);
     }
-
 
 
     private LeonApiService createApiService() {
@@ -55,22 +59,35 @@ public class LeonParser {
     }
 
     public void processData() {
+        ExecutorService executorService = Executors.newFixedThreadPool(3);
+        List<Future<List<Event>>> futures = new ArrayList<>();
+
         try {
             List<Sport> sports = fetchBaseInformation();
             List<League> leagues = new ArrayList<>();
-            for (String sportName: CURRENT_DISCIPLINES){
+
+            for (String sportName : CURRENT_DISCIPLINES) {
                 List<League> leagueList = filterRelevantLeagues(sports, sportName);
                 leagues.addAll(leagueList);
             }
 
-
             if (!leagues.isEmpty()) {
                 for (League league : leagues) {
-                    List<Event> events = fetchEventsForLeague(league);
-                    boolean isLeagueInfoPrinted = false;
+                    futures.add(executorService.submit(() -> fetchEventsForLeague(league)));
+                }
 
-                    for (Event event : events) {
-                        isLeagueInfoPrinted = displayEventDetails(event, isLeagueInfoPrinted);
+                for (Future<List<Event>> future : futures) {
+                    try {
+                        List<Event> events = future.get();
+                        boolean isLeagueInfoPrinted = false;
+
+                        for (Event event : events) {
+                            isLeagueInfoPrinted = displayEventDetails(event, isLeagueInfoPrinted);
+                        }
+                    } catch (ExecutionException e) {
+                        System.err.println("Error fetching events: " + e.getCause());
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
                     }
                 }
             } else {
@@ -79,6 +96,8 @@ public class LeonParser {
         } catch (IOException e) {
             System.err.println("Error during processing: " + e.getMessage());
             e.printStackTrace();
+        } finally {
+            executorService.shutdown();
         }
     }
 
@@ -118,8 +137,8 @@ public class LeonParser {
                 .filter(league -> league.getWeight() == maxWeight)
                 .toList());
 
-        if(topLeagues.size()<2){
-           topLeagues.addAll(leagues.stream().filter(league -> league.getWeight() == secondMaxWeight).toList());
+        if (topLeagues.size() < 2) {
+            topLeagues.addAll(leagues.stream().filter(league -> league.getWeight() == secondMaxWeight).toList());
         }
 
         return sports.stream()
@@ -185,31 +204,25 @@ public class LeonParser {
             );
         });
     }
+
     private Comparator<Region> getRegionComparator(String sportName) {
         if ("Football".equals(sportName)) {
             return Comparator.comparingInt(region -> FOOTBALL_COUNTRY_PRIORITY.getOrDefault(region.getName(), Integer.MAX_VALUE));
-        }
-       /* else if ("Ice Hockey".equals(sportName)){
-            return Comparator.comparingInt(region -> ICE_HOCKEY_PRIORITY.getOrDefault(region.getName(), Integer.MAX_VALUE));
-        }*/
-        else {
+        } else {
             return Comparator.comparingInt(_ -> 0);
         }
     }
-    private Comparator<League> getLeagueComparator(String sportName) {
-        if ("Tennis".equals(sportName)){
-            return Comparator.comparingInt(league -> TENNIS_LEAGUE_PRIORITY.getOrDefault(league.getName(), Integer.MAX_VALUE));
-        }
-        else if ("Ice Hockey".equals(sportName)){
-            return Comparator.comparingInt(league -> ICE_HOCKEY_LEAGUE_PRIORITY.getOrDefault(league.getName(), Integer.MAX_VALUE));
-        }
-        else if ("Basketball".equals(sportName)){
-            return Comparator.comparingInt(league -> BASKETBALL_LEAGUE_PRIORITY.getOrDefault(String.valueOf(league.getId()), Integer.MAX_VALUE));
-        }
 
-        else {
-            return Comparator.comparingInt(_ -> 0);
-        }
+    private Comparator<League> getLeagueComparator(String sportName) {
+        return switch (sportName) {
+            case "Tennis" ->
+                    Comparator.comparingInt(league -> TENNIS_LEAGUE_PRIORITY.getOrDefault(league.getName(), Integer.MAX_VALUE));
+            case "Ice Hockey" ->
+                    Comparator.comparingInt(league -> ICE_HOCKEY_LEAGUE_PRIORITY.getOrDefault(league.getName(), Integer.MAX_VALUE));
+            case "Basketball" ->
+                    Comparator.comparingInt(league -> BASKETBALL_LEAGUE_PRIORITY.getOrDefault(String.valueOf(league.getId()), Integer.MAX_VALUE));
+            case null, default -> Comparator.comparingInt(_ -> 0);
+        };
     }
 
 }
