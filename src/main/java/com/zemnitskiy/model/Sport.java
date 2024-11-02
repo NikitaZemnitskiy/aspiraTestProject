@@ -12,8 +12,6 @@ public class Sport {
     private boolean isVirtual;
     private String url;
 
-    // Getters and setters
-
     public long getId() {
         return id;
     }

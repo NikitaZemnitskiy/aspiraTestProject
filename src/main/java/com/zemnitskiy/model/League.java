@@ -17,6 +17,15 @@ public class League {
     private String logoSource;
     private String logoUrl;
     private String background;
+    private String sportName;
+
+    public String getSportName() {
+        return sportName;
+    }
+
+    public void setSportName(String sportName) {
+        this.sportName = sportName;
+    }
 
     public long getId() {
         return id;
@@ -140,6 +149,13 @@ public class League {
 
     public String getBackground() {
         return background;
+    }
+
+    @Override
+    public String toString() {
+        return "League{" +
+                "name='" + name + '\'' +
+                '}';
     }
 
     public void setBackground(String background) {
