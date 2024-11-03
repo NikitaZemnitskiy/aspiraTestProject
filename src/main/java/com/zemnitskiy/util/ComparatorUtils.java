@@ -17,6 +17,15 @@ public class ComparatorUtils {
             Map.entry("Spain", 5)
     );
 
+    private static final Map<String, Integer> FOOTBALL_LEAGUE_PRIORITY = Map.ofEntries(
+            Map.entry("UEFA Champions League", 0),
+            Map.entry("Premier League", 1),
+            Map.entry("League 1", 2),
+            Map.entry("Bundesliga", 3),
+            Map.entry("Serie A", 4),
+            Map.entry("LaLiga", 5)
+    );
+
     private static final Map<String, Integer> ICE_HOCKEY_LEAGUE_PRIORITY = Map.ofEntries(
             Map.entry("NHL", 0),
             Map.entry("KHL", 1),
@@ -44,25 +53,29 @@ public class ComparatorUtils {
                     Comparator.comparingInt(region ->
                             FOOTBALL_COUNTRY_PRIORITY.getOrDefault(region.name(), Integer.MAX_VALUE)
                     );
-            default -> Comparator.comparingInt(region -> 0);
+            default -> Comparator.comparingInt(_ -> 0);
         };
     }
 
     public static Comparator<League> getLeagueComparator(String sportName) {
         return switch (sportName) {
+            case "Football" ->
+                    Comparator.comparingInt(league ->
+                            FOOTBALL_LEAGUE_PRIORITY.getOrDefault(league.name(), Integer.MAX_VALUE)
+                    );
             case "Tennis" ->
                     Comparator.comparingInt(league ->
-                            TENNIS_LEAGUE_PRIORITY.getOrDefault(league.getName(), Integer.MAX_VALUE)
+                            TENNIS_LEAGUE_PRIORITY.getOrDefault(league.name(), Integer.MAX_VALUE)
                     );
             case "Ice Hockey" ->
                     Comparator.comparingInt(league ->
-                            ICE_HOCKEY_LEAGUE_PRIORITY.getOrDefault(league.getName(), Integer.MAX_VALUE)
+                            ICE_HOCKEY_LEAGUE_PRIORITY.getOrDefault(league.name(), Integer.MAX_VALUE)
                     );
             case "Basketball" ->
                     Comparator.comparingInt(league ->
-                            BASKETBALL_LEAGUE_PRIORITY.getOrDefault(String.valueOf(league.getId()), Integer.MAX_VALUE)
+                            BASKETBALL_LEAGUE_PRIORITY.getOrDefault(String.valueOf(league.id()), Integer.MAX_VALUE)
                     );
-            default -> Comparator.comparingInt(league -> 0);
+            default -> Comparator.comparingInt(_ -> 0);
         };
     }
 }

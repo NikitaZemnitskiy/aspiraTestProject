@@ -65,8 +65,8 @@ class LeonParserTest {
 
         // Assert
         assertEquals(2, result.size());
-        assertEquals(101L, result.get(0).getId());
-        assertEquals(201L, result.get(1).getId());
+        assertEquals(101L, result.get(0).id());
+        assertEquals(201L, result.get(1).id());
     }
 
     @Test
@@ -97,9 +97,7 @@ class LeonParserTest {
     @Test
     void testProcessLeague() throws Exception {
         // Arrange
-        League league = new League();
-        league.setId(2001L);
-        league.setName("Test League");
+        League league = new League(2001L, "Test League", 10, "sport");
 
         Event event1 = new Event();
         event1.setId(3001L);
@@ -137,11 +135,7 @@ class LeonParserTest {
     void testProcessData() throws Exception {
         // Arrange
         String sportName = "Football";
-        League league = new League();
-        league.setId(2001L);
-        league.setName("Test League");
-        league.setWeight(10);
-        league.setSportName(sportName);
+        League league = new League(2001L,"Test League", 10, sportName );
 
         Event event = new Event();
         event.setId(3001L);
@@ -171,7 +165,7 @@ class LeonParserTest {
         spyParser.processData();
 
         // Assert
-        verify(displayService).displayLeagueInfo(league);
+        verify(displayService).displaySportAndLeagueInfo(sportName, league);
         verify(displayService).displayEvent(detailedEvent);
     }
 }

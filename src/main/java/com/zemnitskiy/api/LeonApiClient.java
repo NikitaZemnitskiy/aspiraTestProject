@@ -55,7 +55,7 @@ public class LeonApiClient {
 
     public CompletableFuture<List<Event>> fetchEventsForLeague(League league) {
         String url = String.format(BASE_URL + "betline/events/all?ctag=%s&league_id=%d&hideClosed=%b&flags=%s",
-                LOCALE, league.getId(), true, PARAMETERS);
+                LOCALE, league.id(), true, PARAMETERS);
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
@@ -68,7 +68,7 @@ public class LeonApiClient {
                         SportsResponse sportsResponse = new Gson().fromJson(response.body(), SportsResponse.class);
                         return sportsResponse.events().stream().limit(2).toList();
                     } else {
-                        throw new RuntimeException("Failed to fetch events for league " + league.getName() + ". Response code: " + response.statusCode());
+                        throw new RuntimeException("Failed to fetch events for league " + league.name() + ". Response code: " + response.statusCode());
                     }
                 });
     }

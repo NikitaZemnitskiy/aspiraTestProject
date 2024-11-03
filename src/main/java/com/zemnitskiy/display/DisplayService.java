@@ -19,9 +19,8 @@ public class DisplayService {
     private static final String INDENT_MARKET = "        ";
     private static final String INDENT_RUNNER = "            ";
 
-    public void displayLeagueInfo(League league) {
-        String sportName = Optional.ofNullable(league.getSportName()).orElse("Unknown Sport");
-        System.out.println(INDENT_LEAGUE + "Sport - %s, %s".formatted(sportName, league.getName()));
+    public void displaySportAndLeagueInfo(String sportName, League league) {
+        System.out.println(INDENT_LEAGUE + "Sport - %s, %s".formatted(sportName, league.name()));
     }
 
     public void displayEvent(Event event) {

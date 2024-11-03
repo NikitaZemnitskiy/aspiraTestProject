@@ -5,13 +5,12 @@ import com.zemnitskiy.display.DisplayService;
 import com.zemnitskiy.model.Event;
 import com.zemnitskiy.model.League;
 import com.zemnitskiy.model.result.LeagueResult;
-import com.zemnitskiy.model.Region;
 import com.zemnitskiy.model.Sport;
 import com.zemnitskiy.model.result.SportResult;
 import com.zemnitskiy.util.ComparatorUtils;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -44,11 +43,7 @@ public class LeonParser {
                 List<CompletableFuture<SportResult>> sportFutures = new ArrayList<>();
                 for (String sportName : CURRENT_DISCIPLINES) {
                     CompletableFuture<SportResult> sportFuture;
-                    try {
-                        sportFuture = processSport(sports, sportName);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
+                    sportFuture = processSport(sports, sportName);
                     sportFutures.add(sportFuture);
                 }
 
@@ -59,9 +54,8 @@ public class LeonParser {
             }).thenAccept(sportResults -> {
                 for (SportResult sportResult : sportResults) {
                     if (!sportResult.leagueResults().isEmpty()) {
-                        System.out.println("Processing sport: " + sportResult.sportName());
                         for (LeagueResult leagueResult : sportResult.leagueResults()) {
-                            displayService.displayLeagueInfo(leagueResult.league());
+                            displayService.displaySportAndLeagueInfo(sportResult.sportName(), leagueResult.league());
                             leagueResult.events().forEach(displayService::displayEvent);
                         }
                     } else {
@@ -74,7 +68,7 @@ public class LeonParser {
         }
     }
 
-    private CompletableFuture<SportResult> processSport(List<Sport> sports, String sportName) throws IOException {
+    private CompletableFuture<SportResult> processSport(List<Sport> sports, String sportName){
         List<League> leagues = filterRelevantLeagues(sports, sportName);
 
         if (!leagues.isEmpty()) {
@@ -135,48 +129,14 @@ public class LeonParser {
     }
 
     List<League> filterRelevantLeagues(List<Sport> sports, String sportName) {
-        List<League> leagues = sports.stream()
+        Comparator<League> leagueComparator = Comparator.comparingInt(League::weight).reversed()
+                .thenComparing(ComparatorUtils.getLeagueComparator(sportName));
+
+        return sports.stream()
                 .filter(sport -> sportName.equals(sport.name()))
                 .flatMap(sport -> sport.regions().stream())
-                .flatMap(region -> region.leagues().stream()
-                        .peek(league -> league.setSportName(sportName))
-                )
-                .sorted((l1, l2) -> Integer.compare(l2.getWeight(), l1.getWeight()))
-                .toList();
-
-        if (leagues.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        int maxWeight = leagues.stream()
-                .mapToInt(League::getWeight)
-                .findFirst()
-                .orElse(0);
-
-        int secondMaxWeight = leagues.stream()
-                .mapToInt(League::getWeight)
-                .filter(weight -> weight < maxWeight)
-                .findFirst()
-                .orElse(maxWeight);
-
-        List<League> topLeagues = leagues.stream()
-                .filter(league -> league.getWeight() == maxWeight || league.getWeight() == secondMaxWeight)
-                .toList();
-
-        List<Region> regions = new ArrayList<>(sports.stream()
-                .filter(sport -> sportName.equals(sport.name()))
-                .flatMap(sport -> sport.regions().stream())
-                .toList());
-
-        for (Region region : regions) {
-            region.leagues().retainAll(topLeagues);
-        }
-
-        regions.sort(ComparatorUtils.getRegionComparator(sportName));
-
-        return regions.stream()
                 .flatMap(region -> region.leagues().stream())
-                .sorted(ComparatorUtils.getLeagueComparator(sportName))
+                .sorted(leagueComparator)
                 .limit(2)
                 .toList();
     }
