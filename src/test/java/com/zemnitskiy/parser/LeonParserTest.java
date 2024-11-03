@@ -5,7 +5,7 @@ import com.zemnitskiy.display.DisplayService;
 import com.zemnitskiy.model.Competitor;
 import com.zemnitskiy.model.Event;
 import com.zemnitskiy.model.League;
-import com.zemnitskiy.model.LeagueResult;
+import com.zemnitskiy.model.result.LeagueResult;
 import com.zemnitskiy.model.Market;
 import com.zemnitskiy.model.Region;
 import com.zemnitskiy.model.Sport;
@@ -127,10 +127,10 @@ class LeonParserTest {
         LeagueResult result = future.get();
 
         // Assert
-        assertEquals(league, result.getLeague());
-        assertEquals(2, result.getEvents().size());
-        assertEquals("Detailed Event 1", result.getEvents().get(0).getName());
-        assertEquals("Detailed Event 2", result.getEvents().get(1).getName());
+        assertEquals(league, result.league());
+        assertEquals(2, result.events().size());
+        assertEquals("Detailed Event 1", result.events().get(0).getName());
+        assertEquals("Detailed Event 2", result.events().get(1).getName());
     }
 
     @Test

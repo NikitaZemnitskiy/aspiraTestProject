@@ -4,16 +4,16 @@ import com.zemnitskiy.api.LeonApiClient;
 import com.zemnitskiy.display.DisplayService;
 import com.zemnitskiy.model.Event;
 import com.zemnitskiy.model.League;
-import com.zemnitskiy.model.LeagueResult;
+import com.zemnitskiy.model.result.LeagueResult;
 import com.zemnitskiy.model.Region;
 import com.zemnitskiy.model.Sport;
+import com.zemnitskiy.model.result.SportResult;
 import com.zemnitskiy.util.ComparatorUtils;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 public class LeonParser {
 
@@ -40,40 +40,32 @@ public class LeonParser {
     public void processData() {
         try {
             CompletableFuture<List<Sport>> sportsFuture = apiClient.fetchBaseInformation();
-
-            sportsFuture.thenAccept(sports -> {
+            sportsFuture.thenCompose(sports -> {
+                List<CompletableFuture<SportResult>> sportFutures = new ArrayList<>();
                 for (String sportName : CURRENT_DISCIPLINES) {
-                    List<League> leagues = filterRelevantLeagues(sports, sportName);
+                    CompletableFuture<SportResult> sportFuture;
+                    try {
+                        sportFuture = processSport(sports, sportName);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                    sportFutures.add(sportFuture);
+                }
 
-                    if (!leagues.isEmpty()) {
-                        System.out.println("Processing sport: " + sportName);
-
-                        List<CompletableFuture<LeagueResult>> leagueFutures = new ArrayList<>();
-
-                        for (League league : leagues) {
-                            CompletableFuture<LeagueResult> future;
-                            try {
-                                future = processLeague(league);
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
-                            }
-                            leagueFutures.add(future);
+                return CompletableFuture.allOf(sportFutures.toArray(new CompletableFuture[0]))
+                        .thenApply(_ -> sportFutures.stream()
+                                .map(CompletableFuture::join)
+                                .toList());
+            }).thenAccept(sportResults -> {
+                for (SportResult sportResult : sportResults) {
+                    if (!sportResult.leagueResults().isEmpty()) {
+                        System.out.println("Processing sport: " + sportResult.sportName());
+                        for (LeagueResult leagueResult : sportResult.leagueResults()) {
+                            displayService.displayLeagueInfo(leagueResult.league());
+                            leagueResult.events().forEach(displayService::displayEvent);
                         }
-
-                        CompletableFuture.allOf(leagueFutures.toArray(new CompletableFuture[0]))
-                                .thenRun(() -> {
-                                    leagueFutures.forEach(leagueFuture -> {
-                                        try {
-                                            LeagueResult leagueResult = leagueFuture.get();
-                                            displayService.displayLeagueInfo(leagueResult.getLeague());
-                                            leagueResult.getEvents().forEach(displayService::displayEvent);
-                                        } catch (InterruptedException | ExecutionException e) {
-                                            System.err.println("Error processing league result: " + e.getMessage());
-                                        }
-                                    });
-                                }).join();
                     } else {
-                        System.out.println("No relevant leagues found for sport: " + sportName);
+                        System.out.println("No relevant leagues found for sport: " + sportResult.sportName());
                     }
                 }
             }).join();
@@ -82,19 +74,39 @@ public class LeonParser {
         }
     }
 
-     CompletableFuture<LeagueResult> processLeague(League league) throws IOException {
+    private CompletableFuture<SportResult> processSport(List<Sport> sports, String sportName) throws IOException {
+        List<League> leagues = filterRelevantLeagues(sports, sportName);
+
+        if (!leagues.isEmpty()) {
+            List<CompletableFuture<LeagueResult>> leagueFutures = new ArrayList<>();
+
+            for (League league : leagues) {
+                CompletableFuture<LeagueResult> future = processLeague(league);
+                leagueFutures.add(future);
+            }
+
+            return CompletableFuture.allOf(leagueFutures.toArray(new CompletableFuture[0]))
+                    .thenApply(_ -> {
+                        List<LeagueResult> leagueResults = leagueFutures.stream()
+                                .map(CompletableFuture::join)
+                                .toList();
+                        return new SportResult(sportName, leagueResults);
+                    });
+        } else {
+            return CompletableFuture.completedFuture(new SportResult(sportName, Collections.emptyList()));
+        }
+    }
+
+    CompletableFuture<LeagueResult> processLeague(League league) {
         return apiClient.fetchEventsForLeague(league)
                 .thenCompose(events -> {
                     if (!events.isEmpty()) {
-                        List<CompletableFuture<Event>> eventFutures = new ArrayList<>();
-
-                        for (Event event : events) {
-                            CompletableFuture<Event> future = processEvent(event);
-                            eventFutures.add(future);
-                        }
+                        List<CompletableFuture<Event>> eventFutures = events.stream()
+                                .map(this::processEvent)
+                                .toList();
 
                         return CompletableFuture.allOf(eventFutures.toArray(new CompletableFuture[0]))
-                                .thenApply(v -> {
+                                .thenApply(_ -> {
                                     List<Event> detailedEvents = eventFutures.stream()
                                             .map(CompletableFuture::join)
                                             .toList();
