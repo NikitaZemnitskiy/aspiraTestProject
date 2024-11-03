@@ -5,9 +5,6 @@ import com.zemnitskiy.model.League;
 import com.zemnitskiy.model.Market;
 import com.zemnitskiy.model.Runner;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -16,45 +13,44 @@ import java.util.List;
 
 public class DisplayService {
 
-    private static final Logger logger = LoggerFactory.getLogger(DisplayService.class);
-
     private static final String INDENT_LEAGUE = "";
     private static final String INDENT_EVENT = "    ";
     private static final String INDENT_MARKET = "        ";
     private static final String INDENT_RUNNER = "            ";
 
     public void displaySportAndLeagueInfo(String sportName, League league) {
-        logger.info(INDENT_LEAGUE + "Sport - {}, {}", sportName, league.name());
+        System.out.println(INDENT_LEAGUE + "Sport - %s, %s".formatted(sportName, league.name()));
     }
 
     public void displayEvent(Event event) {
         if (event != null) {
-            LocalDateTime kickoffTime = LocalDateTime.ofInstant(
-                    Instant.ofEpochMilli(event.getKickoff()), ZoneId.systemDefault());
+            LocalDateTime kickoffTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(event.getKickoff()), ZoneId.systemDefault());
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-            logger.info(INDENT_EVENT + "{} {}, {}",
+            System.out.println(INDENT_EVENT + "%s %s, %d".formatted(
                     event.getName(),
                     kickoffTime.format(formatter),
-                    event.getId());
+                    event.getId()
+            ));
             displayMarkets(event.getMarkets());
         } else {
-            logger.info(INDENT_EVENT + "Event details are not available.");
+            System.out.println(INDENT_EVENT + "Event details are not available.");
         }
     }
 
     public void displayMarkets(List<Market> markets) {
         if (markets != null && !markets.isEmpty()) {
             for (Market market : markets) {
-                logger.info(INDENT_MARKET + "{}", market.getName());
+                System.out.println(INDENT_MARKET + market.getName());
                 for (Runner runner : market.getRunners()) {
-                    logger.info(INDENT_RUNNER + "{}, {}, {}",
+                    System.out.println(INDENT_RUNNER + "%s, %s, %d".formatted(
                             runner.name(),
                             runner.priceStr(),
-                            runner.id());
+                            runner.id()
+                    ));
                 }
             }
         } else {
-            logger.info(INDENT_MARKET + "No markets available.");
+            System.out.println(INDENT_MARKET + "No markets available.");
         }
     }
 }
