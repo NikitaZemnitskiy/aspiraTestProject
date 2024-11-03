@@ -19,7 +19,7 @@ public class DisplayService {
     private static final String INDENT_RUNNER = "            ";
 
     public void displaySportAndLeagueInfo(String sportName, League league) {
-        System.out.println(INDENT_LEAGUE + "Sport - %s, %s".formatted(sportName, league.name()));
+        System.out.println(INDENT_LEAGUE + "%s, %s".formatted(sportName, league.name()));
     }
 
     public void displayEvent(Event event) {
