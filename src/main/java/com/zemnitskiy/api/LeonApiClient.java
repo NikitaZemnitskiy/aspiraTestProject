@@ -14,23 +14,16 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
-public class LeonApiClient implements AutoCloseable {
+import static com.zemnitskiy.parser.LeonParser.BASE_URL;
+import static com.zemnitskiy.parser.LeonParser.LOCALE;
+import static com.zemnitskiy.parser.LeonParser.PARAMETERS;
 
-    private static final String BASE_URL = "https://leonbets.com/api-2/";
-    private static final String LOCALE = "en-US";
-    private static final String PARAMETERS = "reg,urlv2,mm2,rrc,nodup";
-    private final ExecutorService executorService;
-
+public class LeonApiClient {
     private final HttpClient httpClient;
 
-    public LeonApiClient() {
-        this.executorService = Executors.newFixedThreadPool(3);
-        this.httpClient = HttpClient.newBuilder()
-                .executor(executorService)
-                .build();
+    public LeonApiClient(HttpClient httpClient) {
+        this.httpClient = httpClient;
     }
 
     public CompletableFuture<List<Sport>> fetchBaseInformation() {
@@ -43,13 +36,10 @@ public class LeonApiClient implements AutoCloseable {
 
         return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenApply(response -> {
-                    if (response.statusCode() == 200) {
-                        Type sportListType = new TypeToken<List<Sport>>() {
-                        }.getType();
-                        return new Gson().fromJson(response.body(), sportListType);
-                    } else {
-                        throw new RuntimeException("Failed to fetch sports data. Response code: " + response.statusCode());
-                    }
+                    checkResponse(response);
+                    Type sportListType = new TypeToken<List<Sport>>() {
+                    }.getType();
+                    return new Gson().fromJson(response.body(), sportListType);
                 });
     }
 
@@ -64,12 +54,9 @@ public class LeonApiClient implements AutoCloseable {
 
         return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenApply(response -> {
-                    if (response.statusCode() == 200) {
+                        checkResponse(response);
                         SportsResponse sportsResponse = new Gson().fromJson(response.body(), SportsResponse.class);
                         return sportsResponse.events().stream().limit(2).toList();
-                    } else {
-                        throw new RuntimeException("Failed to fetch events for league " + league.name() + ". Response code: " + response.statusCode());
-                    }
                 });
     }
 
@@ -83,18 +70,14 @@ public class LeonApiClient implements AutoCloseable {
                 .build();
 
         return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-                .thenApply(response -> {
-                    if (response.statusCode() == 200) {
-                        return new Gson().fromJson(response.body(), Event.class);
-                    } else {
-                        throw new RuntimeException("Failed to fetch details for event " + eventId + ". Response code: " + response.statusCode());
-                    }
-                });
+                .thenApply(response -> new Gson().fromJson(response.body(), Event.class));
     }
 
-    @Override
-    public void close() {
-        executorService.shutdown();
+    private void checkResponse(HttpResponse<String> response) {
+        if (response.statusCode() != 200) {
+            throw new IllegalArgumentException("Failed to fetch sports data. Response code: " + response.statusCode());
+        }
+
     }
 }
 

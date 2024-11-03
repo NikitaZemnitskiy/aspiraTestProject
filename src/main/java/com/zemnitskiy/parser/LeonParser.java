@@ -7,15 +7,15 @@ import com.zemnitskiy.model.League;
 import com.zemnitskiy.model.result.LeagueResult;
 import com.zemnitskiy.model.Sport;
 import com.zemnitskiy.model.result.SportResult;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import java.net.http.HttpClient;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class LeonParser {
 
@@ -25,6 +25,9 @@ public class LeonParser {
     public static final String TENNIS = "Tennis";
     public static final String ICE_HOCKEY = "Ice Hockey";
     public static final String BASKETBALL = "Basketball";
+    public static final String BASE_URL = "https://leonbets.com/api-2/";
+    public static final String LOCALE = "en-US";
+    public static final String PARAMETERS = "reg,urlv2,mm2,rrc,nodup";
 
     private static final List<String> CURRENT_DISCIPLINES = List.of(
             FOOTBALL, TENNIS, ICE_HOCKEY, BASKETBALL
@@ -39,7 +42,11 @@ public class LeonParser {
     }
 
     public static void main(String[] args) {
-        try (LeonApiClient apiClient = new LeonApiClient()) {
+        try (ExecutorService executorService = Executors.newFixedThreadPool(3);
+             HttpClient httpClient = HttpClient.newBuilder()
+                     .executor(executorService)
+                     .build()) {
+            LeonApiClient apiClient = new LeonApiClient(httpClient);
             DisplayService displayService = new DisplayService();
             LeonParser parser = new LeonParser(apiClient, displayService);
             parser.processData();
@@ -58,7 +65,7 @@ public class LeonParser {
                     return CompletableFuture.allOf(sportFutures.toArray(new CompletableFuture[0]))
                             .thenApply(ignored -> sportFutures.stream()
                                     .map(CompletableFuture::join)
-                                    .collect(Collectors.toList()));
+                                    .toList());
                 })
                 .thenAccept(sportResults -> sportResults.forEach(this::displaySportResult))
                 .exceptionally(e -> {
@@ -82,7 +89,7 @@ public class LeonParser {
                 .thenApply(ignored -> {
                     List<LeagueResult> leagueResults = leagueFutures.stream()
                             .map(CompletableFuture::join)
-                            .collect(Collectors.toList());
+                            .toList();
                     return new SportResult(sportName, leagueResults);
                 });
     }
@@ -102,7 +109,7 @@ public class LeonParser {
                             .thenApply(ignored -> {
                                 List<Event> detailedEvents = eventFutures.stream()
                                         .map(CompletableFuture::join)
-                                        .collect(Collectors.toList());
+                                        .toList();
                                 return new LeagueResult(league, detailedEvents);
                             });
                 });
