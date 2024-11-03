@@ -1,83 +1,99 @@
 package com.zemnitskiy.api;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.zemnitskiy.model.Event;
 import com.zemnitskiy.model.League;
 import com.zemnitskiy.model.Sport;
 import com.zemnitskiy.model.SportsResponse;
-import retrofit2.Call;
-import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
 
-import java.io.IOException;
-import java.util.Collections;
+import java.lang.reflect.Type;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class LeonApiClient {
 
+    private static final String BASE_URL = "https://leonbets.com/api-2/";
     private static final String LOCALE = "en-US";
     private static final String PARAMETERS = "reg,urlv2,mm2,rrc,nodup";
+    private final ExecutorService executorService;
 
-    private final LeonApiService apiService;
+    private final HttpClient httpClient;
 
-    public LeonApiClient(String baseUrl) {
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl(baseUrl)
-                .addConverterFactory(GsonConverterFactory.create())
+    public LeonApiClient() {
+        this.executorService = Executors.newFixedThreadPool(3);
+        this.httpClient = HttpClient.newBuilder()
+                .executor(executorService)
                 .build();
-        this.apiService = retrofit.create(LeonApiService.class);
     }
 
-    public List<Sport> fetchBaseInformation() throws IOException {
-        Call<List<Sport>> call = apiService.getBaseInformation(LOCALE, "urlv2");
-        Response<List<Sport>> response = call.execute();
+    public CompletableFuture<List<Sport>> fetchBaseInformation() {
+        String url = BASE_URL + "betline/sports?ctag=" + LOCALE + "&flags=urlv2";
 
-        if (response.isSuccessful() && response.body() != null) {
-            return response.body();
-        } else {
-            System.err.println("Failed to fetch sports data. Response code: " + response.code());
-            return Collections.emptyList();
-        }
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .GET()
+                .build();
+
+        return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenApply(response -> {
+                    if (response.statusCode() == 200) {
+                        Type sportListType = new TypeToken<List<Sport>>() {
+                        }.getType();
+                        return new Gson().fromJson(response.body(), sportListType);
+                    } else {
+                        throw new RuntimeException("Failed to fetch sports data. Response code: " + response.statusCode());
+                    }
+                });
     }
 
-    public List<Event> fetchEventsForLeague(League league) throws IOException {
-        Call<SportsResponse> call = apiService.getSportResponse(
-                LOCALE,
-                league.getId(),
-                true,
-                PARAMETERS
-        );
-        Response<SportsResponse> response = call.execute();
+    public CompletableFuture<List<Event>> fetchEventsForLeague(League league) {
+        String url = String.format(BASE_URL + "betline/events/all?ctag=%s&league_id=%d&hideClosed=%b&flags=%s",
+                LOCALE, league.getId(), true, PARAMETERS);
 
-        if (response.isSuccessful() && response.body() != null) {
-            return response.body().events().stream().limit(2).toList();
-        } else {
-            System.err.printf(
-                    "Failed to fetch events for leagues %s. Response code: %d%n", league.getName(),
-                    response.code()
-            );
-            return Collections.emptyList();
-        }
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .GET()
+                .build();
+
+        return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenApply(response -> {
+                    if (response.statusCode() == 200) {
+                        SportsResponse sportsResponse = new Gson().fromJson(response.body(), SportsResponse.class);
+                        return sportsResponse.events().stream().limit(2).toList();
+                    } else {
+                        throw new RuntimeException("Failed to fetch events for league " + league.getName() + ". Response code: " + response.statusCode());
+                    }
+                });
     }
 
-    public Event fetchEventDetails(long eventId) throws IOException {
-        Call<Event> call = apiService.getEvent(
-                eventId,
-                LOCALE,
-                true,
-                PARAMETERS
-        );
-        Response<Event> response = call.execute();
+    public CompletableFuture<Event> fetchEventDetails(long eventId) {
+        String url = String.format(BASE_URL + "betline/event/all?eventId=%d&ctag=%s&hideClosed=%b&flags=%s",
+                eventId, LOCALE, true, PARAMETERS);
 
-        if (response.isSuccessful() && response.body() != null) {
-            return response.body();
-        } else {
-            System.err.printf(
-                    "Failed to fetch details for event %d. Response code: %d%n", eventId,
-                    response.code()
-            );
-            return null;
-        }
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .GET()
+                .build();
+
+        return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenApply(response -> {
+                    if (response.statusCode() == 200) {
+                        return new Gson().fromJson(response.body(), Event.class);
+                    } else {
+                        throw new RuntimeException("Failed to fetch details for event " + eventId + ". Response code: " + response.statusCode());
+                    }
+                });
+    }
+
+    public void shutdown() {
+        executorService.shutdown();
     }
 }
 
