@@ -1,4 +1,4 @@
-package com.zemnitskiy.util;
+package com.zemnitskiy.comparator;
 
 import com.zemnitskiy.model.League;
 import com.zemnitskiy.model.Region;
@@ -6,7 +6,12 @@ import com.zemnitskiy.model.Region;
 import java.util.Comparator;
 import java.util.Map;
 
-public class ComparatorUtils {
+import static com.zemnitskiy.parser.LeonParser.BASKETBALL;
+import static com.zemnitskiy.parser.LeonParser.FOOTBALL;
+import static com.zemnitskiy.parser.LeonParser.ICE_HOCKEY;
+import static com.zemnitskiy.parser.LeonParser.TENNIS;
+
+public class LeonComparator {
 
     private static final Map<String, Integer> FOOTBALL_COUNTRY_PRIORITY = Map.ofEntries(
             Map.entry("Europe", 0),
@@ -49,7 +54,7 @@ public class ComparatorUtils {
 
     public static Comparator<Region> getRegionComparator(String sportName) {
         return switch (sportName) {
-            case "Football" ->
+            case FOOTBALL ->
                     Comparator.comparingInt(region ->
                             FOOTBALL_COUNTRY_PRIORITY.getOrDefault(region.name(), Integer.MAX_VALUE)
                     );
@@ -59,19 +64,19 @@ public class ComparatorUtils {
 
     public static Comparator<League> getLeagueComparator(String sportName) {
         return switch (sportName) {
-            case "Football" ->
+            case FOOTBALL ->
                     Comparator.comparingInt(league ->
                             FOOTBALL_LEAGUE_PRIORITY.getOrDefault(league.name(), Integer.MAX_VALUE)
                     );
-            case "Tennis" ->
+            case TENNIS ->
                     Comparator.comparingInt(league ->
                             TENNIS_LEAGUE_PRIORITY.getOrDefault(league.name(), Integer.MAX_VALUE)
                     );
-            case "Ice Hockey" ->
+            case ICE_HOCKEY ->
                     Comparator.comparingInt(league ->
                             ICE_HOCKEY_LEAGUE_PRIORITY.getOrDefault(league.name(), Integer.MAX_VALUE)
                     );
-            case "Basketball" ->
+            case BASKETBALL ->
                     Comparator.comparingInt(league ->
                             BASKETBALL_LEAGUE_PRIORITY.getOrDefault(String.valueOf(league.id()), Integer.MAX_VALUE)
                     );

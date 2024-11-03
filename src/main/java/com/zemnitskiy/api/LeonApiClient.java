@@ -17,7 +17,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class LeonApiClient {
+public class LeonApiClient implements AutoCloseable {
 
     private static final String BASE_URL = "https://leonbets.com/api-2/";
     private static final String LOCALE = "en-US";
@@ -92,7 +92,8 @@ public class LeonApiClient {
                 });
     }
 
-    public void shutdown() {
+    @Override
+    public void close() {
         executorService.shutdown();
     }
 }
