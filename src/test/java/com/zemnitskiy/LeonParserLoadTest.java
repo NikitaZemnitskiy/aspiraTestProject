@@ -1,7 +1,11 @@
 package com.zemnitskiy;
 
+import com.zemnitskiy.api.LeonApiClient;
+import com.zemnitskiy.display.DisplayService;
+import com.zemnitskiy.parser.LeonParser;
 import org.junit.jupiter.api.Test;
 
+import static com.zemnitskiy.parser.LeonParser.BASE_URL;
 import static org.junit.jupiter.api.Assertions.*;
 
 class LeonParserLoadTest {
@@ -12,7 +16,9 @@ class LeonParserLoadTest {
         long totalDuration = 0;
 
         for (int i = 0; i < NUMBER_OF_RUNS; i++) {
-            LeonParser parser = new LeonParser();
+            LeonApiClient apiClient = new LeonApiClient(BASE_URL);
+            DisplayService displayService = new DisplayService();
+            LeonParser parser = new LeonParser(apiClient, displayService);
             long startTime = System.nanoTime();
             parser.processData();
             long endTime = System.nanoTime();

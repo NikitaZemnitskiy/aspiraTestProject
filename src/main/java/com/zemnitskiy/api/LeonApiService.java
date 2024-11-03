@@ -1,4 +1,4 @@
-package com.zemnitskiy.service;
+package com.zemnitskiy.api;
 
 import com.zemnitskiy.model.Event;
 import com.zemnitskiy.model.Sport;
