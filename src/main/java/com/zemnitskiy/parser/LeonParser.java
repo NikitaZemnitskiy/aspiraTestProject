@@ -7,7 +7,6 @@ import com.zemnitskiy.model.League;
 import com.zemnitskiy.model.result.LeagueResult;
 import com.zemnitskiy.model.Sport;
 import com.zemnitskiy.model.result.SportResult;
-import com.zemnitskiy.comparator.LeonComparator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -110,24 +109,22 @@ public class LeonParser {
     }
 
     private CompletableFuture<Event> processEvent(Event event) {
-        return apiClient.fetchEventDetails(event.getId())
+        return apiClient.fetchEventDetails(event.id())
                 .exceptionally(e -> {
-                    logger.error("Error processing event {}: {}", event.getId(), e.getMessage(), e);
+                    logger.error("Error processing event {}: {}", event.id(), e.getMessage(), e);
                     return event;
                 });
     }
 
     private List<League> filterRelevantLeagues(List<Sport> sports, String sportName) {
-        Comparator<League> leagueComparator = Comparator.comparingInt(League::weight).reversed()
-                .thenComparing(LeonComparator.getLeagueComparator(sportName));
-
         return sports.stream()
                 .filter(sport -> sportName.equals(sport.name()))
                 .flatMap(sport -> sport.regions().stream())
                 .flatMap(region -> region.leagues().stream())
-                .sorted(leagueComparator)
-                .limit(2)
-                .collect(Collectors.toList());
+                .filter(League::top)
+                .sorted(Comparator.comparingInt(League::topOrder))
+                .limit(1)
+                .toList();
     }
 
     private void displaySportResult(SportResult sportResult) {
