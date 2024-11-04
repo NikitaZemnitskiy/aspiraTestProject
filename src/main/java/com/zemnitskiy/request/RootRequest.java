@@ -1,23 +1,18 @@
-package com.zemnitskiy.api;
+package com.zemnitskiy.request;
 
+import com.zemnitskiy.api.LeonApiClient;
 import com.zemnitskiy.model.League;
 import com.zemnitskiy.model.Sport;
 import com.zemnitskiy.model.result.LeagueResult;
 import com.zemnitskiy.model.result.RootResult;
-import com.zemnitskiy.parser.LeonParser;
 
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-public class RootRequest implements AsyncRequest<RootResult> {
-    private final LeonApiClient apiClient;
-    private final List<String> sportsNames;
+import static com.zemnitskiy.parser.LeonParser.LEAGUE_COUNT;
 
-    public RootRequest(LeonApiClient apiClient, List<String> sportsNames) {
-        this.apiClient = apiClient;
-        this.sportsNames = sportsNames;
-    }
+public record RootRequest(LeonApiClient apiClient, List<String> sportsNames) implements AsyncRequest<RootResult> {
 
     @Override
     public CompletableFuture<RootResult> fetch() {
@@ -32,7 +27,7 @@ public class RootRequest implements AsyncRequest<RootResult> {
                             .flatMap(region -> region.leagues().stream())
                             .filter(League::top)
                             .sorted(Comparator.comparingInt(League::topOrder))
-                            .limit(LeonParser.LEAGUE_COUNT)
+                            .limit(LEAGUE_COUNT)
                             .map(league -> new LeagueRequest(apiClient, league).fetch())
                             .toList();
 

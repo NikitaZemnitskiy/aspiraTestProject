@@ -1,5 +1,6 @@
-package com.zemnitskiy.api;
+package com.zemnitskiy.request;
 
+import com.zemnitskiy.api.LeonApiClient;
 import com.zemnitskiy.model.League;
 import com.zemnitskiy.model.result.EventResult;
 import com.zemnitskiy.model.result.LeagueResult;
@@ -7,14 +8,7 @@ import com.zemnitskiy.model.result.LeagueResult;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-public class LeagueRequest implements AsyncRequest<LeagueResult> {
-    private final LeonApiClient apiClient;
-    private final League league;
-
-    public LeagueRequest(LeonApiClient apiClient, League league) {
-        this.apiClient = apiClient;
-        this.league = league;
-    }
+public record LeagueRequest(LeonApiClient apiClient, League league) implements AsyncRequest<LeagueResult> {
 
     @Override
     public CompletableFuture<LeagueResult> fetch() {
@@ -22,7 +16,7 @@ public class LeagueRequest implements AsyncRequest<LeagueResult> {
                 .thenCompose(events -> {
                     List<CompletableFuture<EventResult>> eventFutures = events.stream()
                             .map(event -> new EventRequest(apiClient, event).fetch())
-                            .limit(2) //?
+                            .limit(2) // Предполагаемый лимит, можно изменить при необходимости
                             .toList();
 
                     return CompletableFuture.allOf(eventFutures.toArray(new CompletableFuture[0]))

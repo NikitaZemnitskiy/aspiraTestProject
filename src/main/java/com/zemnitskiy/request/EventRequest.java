@@ -1,18 +1,12 @@
-package com.zemnitskiy.api;
+package com.zemnitskiy.request;
 
+import com.zemnitskiy.api.LeonApiClient;
 import com.zemnitskiy.model.Event;
 import com.zemnitskiy.model.result.EventResult;
 
 import java.util.concurrent.CompletableFuture;
 
-public class EventRequest implements AsyncRequest<EventResult> {
-    private final LeonApiClient apiClient;
-    private final Event event;
-
-    public EventRequest(LeonApiClient apiClient, Event event) {
-        this.apiClient = apiClient;
-        this.event = event;
-    }
+public record EventRequest(LeonApiClient apiClient, Event event) implements AsyncRequest<EventResult> {
 
     @Override
     public CompletableFuture<EventResult> fetch() {
