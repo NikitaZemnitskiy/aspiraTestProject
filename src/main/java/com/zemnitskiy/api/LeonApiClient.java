@@ -1,13 +1,10 @@
 package com.zemnitskiy.api;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
-import com.zemnitskiy.model.Event;
-import com.zemnitskiy.model.League;
-import com.zemnitskiy.model.Sport;
+import com.zemnitskiy.model.basemodel.Event;
+import com.zemnitskiy.model.basemodel.League;
+import com.zemnitskiy.model.basemodel.Sport;
 
 import java.lang.reflect.Type;
 import java.net.URI;
@@ -45,7 +42,7 @@ public class LeonApiClient {
                 });
     }
 
-    public CompletableFuture<List<Event>> fetchEventsForLeague(League league) {
+    public CompletableFuture<League> fetchEventsForLeague(League league) {
         String url = String.format(BASE_URL + "betline/events/all?ctag=%s&league_id=%d&hideClosed=%b&flags=%s",
                 LOCALE, league.id(), true, PARAMETERS);
 
@@ -56,20 +53,7 @@ public class LeonApiClient {
                 .build();
 
         return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-                .thenApply(response -> {
-                    checkResponse(response);
-                    String responseBody = response.body();
-                    JsonElement jsonElement = JsonParser.parseString(responseBody);
-                    JsonElement eventsElement = getJsonElement(jsonElement, "events");
-                    Type eventListType = new TypeToken<List<Event>>() {
-                    }.getType();
-                    return new Gson().<List<Event>>fromJson(eventsElement, eventListType);
-
-                })
-                .exceptionally(e -> {
-                    System.err.println("Error retrieving events for league " + league.name() + ": " + e.getMessage());
-                    return List.of();
-                });
+                .thenApply(response -> new Gson().fromJson(response.body(), League.class));
     }
 
     public CompletableFuture<Event> fetchEventDetails(long eventId) {
@@ -83,19 +67,6 @@ public class LeonApiClient {
 
         return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenApply(response -> new Gson().fromJson(response.body(), Event.class));
-    }
-
-    private JsonElement getJsonElement(JsonElement jsonElement, String jsonElementName) {
-        if (!jsonElement.isJsonObject()) {
-            throw new IllegalArgumentException("Expected a JSON object, but received a different type");
-        }
-        JsonObject jsonObject = jsonElement.getAsJsonObject();
-
-        JsonElement eventsElement = jsonObject.get(jsonElementName);
-        if (eventsElement == null || !eventsElement.isJsonArray()) {
-            throw new IllegalArgumentException("The 'events' field is missing or is not an array");
-        }
-        return eventsElement;
     }
 
     private void checkResponse(HttpResponse<String> response) {

@@ -4,12 +4,12 @@ package com.zemnitskiy.parser;
 import com.zemnitskiy.api.LeonApiClient;
 import com.zemnitskiy.display.DisplayService;
 import com.zemnitskiy.model.Competitor;
-import com.zemnitskiy.model.Event;
-import com.zemnitskiy.model.League;
+import com.zemnitskiy.model.leonmodel.Event;
+import com.zemnitskiy.model.leonmodel.League;
 import com.zemnitskiy.model.result.LeagueResult;
-import com.zemnitskiy.model.Market;
-import com.zemnitskiy.model.Region;
-import com.zemnitskiy.model.Sport;
+import com.zemnitskiy.model.leonmodel.Market;
+import com.zemnitskiy.model.leonmodel.Region;
+import com.zemnitskiy.model.leonmodel.Sport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

@@ -1,7 +1,6 @@
 package com.zemnitskiy;
 
 import com.zemnitskiy.api.LeonApiClient;
-import com.zemnitskiy.display.DisplayService;
 import com.zemnitskiy.parser.LeonParser;
 import org.junit.jupiter.api.Test;
 
@@ -22,8 +21,7 @@ class LeonParserLoadTest {
                 .executor(executorService)
                 .build()) {
             LeonApiClient apiClient = new LeonApiClient(httpClient);
-            DisplayService displayService = new DisplayService();
-            LeonParser parser = new LeonParser(apiClient, displayService);
+            LeonParser parser = new LeonParser(apiClient);
             for (int i = 0; i < NUMBER_OF_RUNS; i++) {
                 long startTime = System.nanoTime();
                 parser.processData();
