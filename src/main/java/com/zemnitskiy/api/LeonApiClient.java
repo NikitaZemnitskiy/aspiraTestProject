@@ -6,7 +6,6 @@ import com.zemnitskiy.model.Event;
 import com.zemnitskiy.model.League;
 import com.zemnitskiy.model.Sport;
 import com.zemnitskiy.model.SportsResponse;
-
 import java.lang.reflect.Type;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -56,7 +55,7 @@ public class LeonApiClient {
                 .thenApply(response -> {
                         checkResponse(response);
                         SportsResponse sportsResponse = new Gson().fromJson(response.body(), SportsResponse.class);
-                        return sportsResponse.events().stream().limit(2).toList();
+                        return sportsResponse.events().stream().toList();
                 });
     }
 
@@ -75,7 +74,7 @@ public class LeonApiClient {
 
     private void checkResponse(HttpResponse<String> response) {
         if (response.statusCode() != 200) {
-            throw new IllegalArgumentException("Failed to fetch sports data. Response code: " + response.statusCode());
+            throw new IllegalArgumentException("Failed to fetch data. Response code: " + response.statusCode());
         }
 
     }

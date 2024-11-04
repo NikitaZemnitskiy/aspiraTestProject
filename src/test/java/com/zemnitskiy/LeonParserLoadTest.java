@@ -15,7 +15,7 @@ class LeonParserLoadTest {
 
     @Test
      void testProcessDataLoad() {
-        final int NUMBER_OF_RUNS = 10;
+        final int NUMBER_OF_RUNS = 100;
         long totalDuration = 0;
         try (ExecutorService executorService = Executors.newFixedThreadPool(3);
              HttpClient httpClient = HttpClient.newBuilder()
@@ -33,7 +33,6 @@ class LeonParserLoadTest {
                 System.out.println("Run " + (i + 1) + ": " + duration / 1_000_000 + " ms");
             }
         }
-
 
         double averageDuration = totalDuration / (double) NUMBER_OF_RUNS;
         System.out.printf("Average processing time over %d runs: %.2f ms%n", NUMBER_OF_RUNS, averageDuration / 1_000_000);
