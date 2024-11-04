@@ -1,7 +1,6 @@
 package com.zemnitskiy;
 
 import com.zemnitskiy.api.LeonApiClient;
-import com.zemnitskiy.display.DisplayService;
 import com.zemnitskiy.parser.LeonParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,8 +18,7 @@ public class Main {
                      .executor(executorService)
                      .build()) {
             LeonApiClient apiClient = new LeonApiClient(httpClient);
-            DisplayService displayService = new DisplayService();
-            LeonParser parser = new LeonParser(apiClient, displayService);
+            LeonParser parser = new LeonParser(apiClient);
             parser.processData();
         } catch (Exception e) {
             logger.error("Error during processing: {}", e.getMessage(), e);

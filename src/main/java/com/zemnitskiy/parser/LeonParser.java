@@ -1,8 +1,6 @@
 package com.zemnitskiy.parser;
 
 import com.zemnitskiy.api.LeonApiClient;
-import com.zemnitskiy.display.DisplayService;
-import com.zemnitskiy.model.result.EventResult;
 import com.zemnitskiy.model.result.RootResult;
 import com.zemnitskiy.request.RootRequest;
 import org.slf4j.Logger;
@@ -30,33 +28,19 @@ public class LeonParser {
     );
 
     private final LeonApiClient apiClient;
-    private final DisplayService displayService;
 
-    public LeonParser(LeonApiClient apiClient, DisplayService displayService) {
+    public LeonParser(LeonApiClient apiClient) {
         this.apiClient = apiClient;
-        this.displayService = displayService;
     }
 
     public void processData() {
         RootRequest rootRequest = new RootRequest(apiClient, CURRENT_DISCIPLINES);
         rootRequest.fetch()
-                .thenAccept(rootResults -> rootResults.forEach(this::displayRootResult))
+                .thenAccept(RootResult::visit)
                 .exceptionally(e -> {
                     logger.error("Error during processing: {}", e.getMessage(), e);
                     return null;
                 }).join();
-    }
-
-    private void displayRootResult(RootResult rootResult) {
-        rootResult.leagueResults()
-                .forEach(leagueResult -> {
-                            displayService.displaySportAndLeagueInfo(rootResult.sport().name(), leagueResult.league());
-                            leagueResult.eventResults().stream()
-                                    .map(EventResult::event)
-                                    .forEach(displayService::displayEvent);
-                        }
-                );
-
     }
 
 }

@@ -1,4 +1,4 @@
-package com.zemnitskiy.model;
+package com.zemnitskiy.model.basemodel;
 
 import java.util.List;
 
