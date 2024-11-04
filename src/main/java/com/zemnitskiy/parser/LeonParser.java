@@ -1,9 +1,10 @@
 package com.zemnitskiy.parser;
 
 import com.zemnitskiy.api.LeonApiClient;
-import com.zemnitskiy.request.RootRequest;
 import com.zemnitskiy.display.DisplayService;
-import com.zemnitskiy.model.result.LeagueResult;
+import com.zemnitskiy.model.result.EventResult;
+import com.zemnitskiy.model.result.RootResult;
+import com.zemnitskiy.request.RootRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +23,7 @@ public class LeonParser {
     public static final String LOCALE = "en-US";
     public static final String PARAMETERS = "reg,urlv2,mm2,rrc,nodup";
     public static final int LEAGUE_COUNT = 1;
+    public static final int MATCH_COUNT = 2;
 
     private static final List<String> CURRENT_DISCIPLINES = List.of(
             FOOTBALL, TENNIS, ICE_HOCKEY, BASKETBALL
@@ -38,16 +40,23 @@ public class LeonParser {
     public void processData() {
         RootRequest rootRequest = new RootRequest(apiClient, CURRENT_DISCIPLINES);
         rootRequest.fetch()
-                .thenAccept(rootResult -> rootResult.leagueResults()
-                        .forEach(this::displayLeagueResult))
+                .thenAccept(rootResults -> rootResults.forEach(this::displayRootResult))
                 .exceptionally(e -> {
                     logger.error("Error during processing: {}", e.getMessage(), e);
                     return null;
                 }).join();
     }
 
-    private void displayLeagueResult(LeagueResult leagueResult) {
-        displayService.displaySportAndLeagueInfo(leagueResult.eventResults().getFirst().event().league().sport().name(), leagueResult.league());
-        leagueResult.eventResults().forEach(eventResult -> displayService.displayEvent(eventResult.event()));
+    private void displayRootResult(RootResult rootResult) {
+        rootResult.leagueResults()
+                .forEach(leagueResult -> {
+                            displayService.displaySportAndLeagueInfo(rootResult.sport().name(), leagueResult.league());
+                            leagueResult.eventResults().stream()
+                                    .map(EventResult::event)
+                                    .forEach(displayService::displayEvent);
+                        }
+                );
+
     }
+
 }

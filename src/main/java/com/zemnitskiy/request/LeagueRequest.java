@@ -8,6 +8,8 @@ import com.zemnitskiy.model.result.LeagueResult;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import static com.zemnitskiy.parser.LeonParser.MATCH_COUNT;
+
 public record LeagueRequest(LeonApiClient apiClient, League league) implements AsyncRequest<LeagueResult> {
 
     @Override
@@ -16,7 +18,7 @@ public record LeagueRequest(LeonApiClient apiClient, League league) implements A
                 .thenCompose(events -> {
                     List<CompletableFuture<EventResult>> eventFutures = events.stream()
                             .map(event -> new EventRequest(apiClient, event).fetch())
-                            .limit(2) // Предполагаемый лимит, можно изменить при необходимости
+                            .limit(MATCH_COUNT)
                             .toList();
 
                     return CompletableFuture.allOf(eventFutures.toArray(new CompletableFuture[0]))

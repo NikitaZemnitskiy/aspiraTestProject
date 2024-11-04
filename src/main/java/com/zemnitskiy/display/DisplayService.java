@@ -25,7 +25,7 @@ public class DisplayService {
         if (event != null) {
             LocalDateTime kickoffTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(event.kickoff()), ZoneId.systemDefault());
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-            System.out.println(INDENT_EVENT + "%s %s, %d".formatted(
+            System.out.println(INDENT_EVENT + String.format("%s %s, %d",
                     event.name(),
                     kickoffTime.format(formatter),
                     event.id()
@@ -41,7 +41,7 @@ public class DisplayService {
             for (Market market : markets) {
                 System.out.println(INDENT_MARKET + market.name());
                 for (Runner runner : market.runners()) {
-                    System.out.println(INDENT_RUNNER + "%s, %s, %d".formatted(
+                    System.out.println(INDENT_RUNNER + String.format("%s, %s, %d",
                             runner.name(),
                             runner.priceStr(),
                             runner.id()

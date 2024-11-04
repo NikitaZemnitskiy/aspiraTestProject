@@ -12,32 +12,40 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.zemnitskiy.parser.LeonParser.LEAGUE_COUNT;
 
-public record RootRequest(LeonApiClient apiClient, List<String> sportsNames) implements AsyncRequest<RootResult> {
+public record RootRequest(LeonApiClient apiClient, List<String> sportsNames) implements AsyncRequest<List<RootResult>> {
 
     @Override
-    public CompletableFuture<RootResult> fetch() {
+    public CompletableFuture<List<RootResult>> fetch() {
         return apiClient.fetchBaseInformation()
                 .thenCompose(sports -> {
                     List<Sport> filteredSports = sports.stream()
                             .filter(sport -> sportsNames.contains(sport.name()))
                             .toList();
 
-                    List<CompletableFuture<LeagueResult>> leagueFutures = filteredSports.stream()
-                            .flatMap(sport -> sport.regions().stream())
-                            .flatMap(region -> region.leagues().stream())
-                            .filter(League::top)
-                            .sorted(Comparator.comparingInt(League::topOrder))
-                            .limit(LEAGUE_COUNT)
-                            .map(league -> new LeagueRequest(apiClient, league).fetch())
+                    List<CompletableFuture<RootResult>> rootFutures = filteredSports.stream()
+                            .map(sport -> {
+                                List<CompletableFuture<LeagueResult>> leagueFutures = sport.regions().stream()
+                                        .flatMap(region -> region.leagues().stream())
+                                        .filter(League::top)
+                                        .sorted(Comparator.comparingInt(League::topOrder))
+                                        .limit(LEAGUE_COUNT)
+                                        .map(league -> new LeagueRequest(apiClient, league).fetch())
+                                        .toList();
+
+                                return CompletableFuture.allOf(leagueFutures.toArray(new CompletableFuture[0]))
+                                        .thenApply(_ -> {
+                                            List<LeagueResult> leagueResults = leagueFutures.stream()
+                                                    .map(CompletableFuture::join)
+                                                    .toList();
+                                            return new RootResult(sport, leagueResults);
+                                        });
+                            })
                             .toList();
 
-                    return CompletableFuture.allOf(leagueFutures.toArray(new CompletableFuture[0]))
-                            .thenApply(_ -> {
-                                List<LeagueResult> leagueResults = leagueFutures.stream()
-                                        .map(CompletableFuture::join)
-                                        .toList();
-                                return new RootResult(leagueResults);
-                            });
+                    return CompletableFuture.allOf(rootFutures.toArray(new CompletableFuture[0]))
+                            .thenApply(_ -> rootFutures.stream()
+                                    .map(CompletableFuture::join)
+                                    .toList());
                 });
     }
 }

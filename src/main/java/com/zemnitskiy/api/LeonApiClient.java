@@ -1,11 +1,14 @@
 package com.zemnitskiy.api;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 import com.zemnitskiy.model.Event;
 import com.zemnitskiy.model.League;
 import com.zemnitskiy.model.Sport;
-import com.zemnitskiy.model.SportsResponse;
+
 import java.lang.reflect.Type;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -49,13 +52,23 @@ public class LeonApiClient {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .GET()
+                .header("Accept", "application/json")
                 .build();
 
         return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenApply(response -> {
-                        checkResponse(response);
-                        SportsResponse sportsResponse = new Gson().fromJson(response.body(), SportsResponse.class);
-                        return sportsResponse.events().stream().toList();
+                    checkResponse(response);
+                    String responseBody = response.body();
+                    JsonElement jsonElement = JsonParser.parseString(responseBody);
+                    JsonElement eventsElement = getJsonElement(jsonElement, "events");
+                    Type eventListType = new TypeToken<List<Event>>() {
+                    }.getType();
+                    return new Gson().<List<Event>>fromJson(eventsElement, eventListType);
+
+                })
+                .exceptionally(e -> {
+                    System.err.println("Error retrieving events for league " + league.name() + ": " + e.getMessage());
+                    return List.of();
                 });
     }
 
@@ -70,6 +83,19 @@ public class LeonApiClient {
 
         return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenApply(response -> new Gson().fromJson(response.body(), Event.class));
+    }
+
+    private JsonElement getJsonElement(JsonElement jsonElement, String jsonElementName) {
+        if (!jsonElement.isJsonObject()) {
+            throw new IllegalArgumentException("Expected a JSON object, but received a different type");
+        }
+        JsonObject jsonObject = jsonElement.getAsJsonObject();
+
+        JsonElement eventsElement = jsonObject.get(jsonElementName);
+        if (eventsElement == null || !eventsElement.isJsonArray()) {
+            throw new IllegalArgumentException("The 'events' field is missing or is not an array");
+        }
+        return eventsElement;
     }
 
     private void checkResponse(HttpResponse<String> response) {
