@@ -1,5 +1,9 @@
 # LeonParser
 
+## Java Version
+
+This project requires **Java 21**.
+
 ## Overview
 
 LeonParser is a Java application designed to fetch, process, and display information about various sports, their leagues, and associated events. It leverages asynchronous programming to efficiently handle data retrieval and ensure responsive performance.
@@ -30,7 +34,7 @@ LeonParser is a Java application designed to fetch, process, and display informa
 3. **Run the Application:**
 
    ```bash
-   mvn exec:java -Dexec.mainClass="com.zemnitskiy.parser.Main"
+   mvn exec:java -Dexec.mainClass="com.zemnitskiy.parser.LeonParser"
    ```
 
    Or, if packaged as a JAR:
@@ -38,6 +42,21 @@ LeonParser is a Java application designed to fetch, process, and display informa
    ```bash
    java -jar target/LeonParser-1.0-SNAPSHOT.jar
    ```
+
+## Or Running with Docker
+
+### 1. Build the Docker Image
+
+```bash
+docker build -t leon-parser .
+```
+
+### 1.Run the Docker Container
+
+```bash
+docker run -d --name leon-parser-container leon-parser
+```
+
 
 ## Customization
 
