@@ -9,6 +9,7 @@ import com.zemnitskiy.model.result.RunnerResult;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 
 public class ResultPrinter implements ResultVisitor {
 
@@ -19,16 +20,16 @@ public class ResultPrinter implements ResultVisitor {
 
     @Override
     public void visitLeague(LeagueResult leagueResult) {
-        System.out.println("new league");
         System.out.printf("%s, %s%n", leagueResult.sportName(), leagueResult.league().name());
     }
 
     @Override
     public void visitMatch(MatchResult matchResult) {
         LocalDateTime kickoffTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(matchResult.event().kickoff()), ZoneId.systemDefault());
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         System.out.println("\t" + String.format("%s %s, %d",
                 matchResult.event().name(),
-                kickoffTime,
+                kickoffTime.format(formatter) + " UTC",
                 matchResult.event().id()));
     }
 

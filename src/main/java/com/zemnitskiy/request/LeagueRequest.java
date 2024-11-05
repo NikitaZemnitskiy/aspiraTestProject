@@ -40,7 +40,7 @@ public record LeagueRequest(LeonApiClient apiClient, League league, String sport
                             .toList();
 
                     return CompletableFuture.allOf(matchFutures.toArray(new CompletableFuture[0]))
-                            .thenApply(_ -> {
+                            .thenApply(v -> {
                                 List<MatchResult> matchResults = matchFutures.stream()
                                         .map(CompletableFuture::join)
                                         .toList();
