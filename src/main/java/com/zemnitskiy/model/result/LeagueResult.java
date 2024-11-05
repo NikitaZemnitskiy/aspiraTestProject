@@ -1,14 +1,18 @@
 package com.zemnitskiy.model.result;
 
 import com.zemnitskiy.model.basemodel.League;
+import com.zemnitskiy.visitor.Result;
+import com.zemnitskiy.visitor.ResultVisitor;
 
 import java.util.List;
 
-public record LeagueResult(String sportName, League league, List<MatchResult> matchResults) implements ResultVisitor {
+public record LeagueResult(String sportName, League league, List<MatchResult> matchResults) implements Result {
 
     @Override
-    public void visit() {
-        System.out.printf("%s, %s%n", sportName, league.name());
-        matchResults.forEach(MatchResult::visit);
+    public void accept(ResultVisitor v) {
+        v.visitLeague(this);
+        for (MatchResult matchResult : matchResults) {
+            matchResult.accept(v);
+        }
     }
 }

@@ -8,6 +8,7 @@ import java.net.http.HttpClient;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static com.zemnitskiy.Main.BASE_URL;
 import static org.junit.jupiter.api.Assertions.*;
 
 class LeonParserLoadTest {
@@ -20,7 +21,7 @@ class LeonParserLoadTest {
              HttpClient httpClient = HttpClient.newBuilder()
                 .executor(executorService)
                 .build()) {
-            LeonApiClient apiClient = new LeonApiClient(httpClient);
+            LeonApiClient apiClient = new LeonApiClient(httpClient, BASE_URL);
             LeonParser parser = new LeonParser(apiClient);
             for (int i = 0; i < NUMBER_OF_RUNS; i++) {
                 long startTime = System.nanoTime();
@@ -37,11 +38,6 @@ class LeonParserLoadTest {
 
         assertTrue(averageDuration < 5_000_000_000.0, "Average processing time exceeds acceptable limits");
     }
-    //19.24 - Average processing time over 100 runs: 2073,84 ms
-    //19.34 - Average processing time over 100 runs: 1431,38 ms
-    //21.35 - Average processing time over 100 runs: 1010,07 ms
-    //21.59 - Average processing time over 10 runs: 1680,27 ms
-    //0.29 - Average processing time over 10 runs: 351,72 ms
 
 
 
