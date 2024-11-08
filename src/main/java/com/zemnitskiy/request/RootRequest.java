@@ -4,6 +4,8 @@ import com.zemnitskiy.api.LeonApiClient;
 import com.zemnitskiy.model.basemodel.League;
 import com.zemnitskiy.model.result.LeagueResult;
 import com.zemnitskiy.model.result.RootResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Comparator;
 import java.util.List;
@@ -24,6 +26,7 @@ import static com.zemnitskiy.Main.LEAGUE_COUNT;
  * @see RootResult
  */
 public record RootRequest(LeonApiClient apiClient, List<String> sportsNames) implements AsyncRequest<RootResult> {
+    private static final Logger logger = LoggerFactory.getLogger(RootRequest.class);
 
     /**
      * Executes the asynchronous fetch operation to retrieve league information for the specified sports.
@@ -44,6 +47,7 @@ public record RootRequest(LeonApiClient apiClient, List<String> sportsNames) imp
     public CompletableFuture<RootResult> fetch() {
         return apiClient.fetchBaseInformation()
                 .thenCompose(sports -> {
+                    logger.debug("Fetching sports: {}", sportsNames);
                     List<CompletableFuture<LeagueResult>> leagueFutures = sports.stream()
                             .filter(sport -> sportsNames.contains(sport.name()))
                             .flatMap(sport -> sport.regions().stream()
@@ -57,6 +61,7 @@ public record RootRequest(LeonApiClient apiClient, List<String> sportsNames) imp
 
                     return CompletableFuture.allOf(leagueFutures.toArray(new CompletableFuture[0]))
                             .thenApply(v -> {
+                                logger.debug("Compiling sports");
                                 List<LeagueResult> leagueResults = leagueFutures.stream()
                                         .map(CompletableFuture::join)
                                         .toList();

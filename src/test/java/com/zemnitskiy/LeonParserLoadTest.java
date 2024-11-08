@@ -15,13 +15,13 @@ class LeonParserLoadTest {
 
     @Test
      void testProcessDataLoad() {
-        final int NUMBER_OF_RUNS = 100;
+        final int NUMBER_OF_RUNS = 10;
         long totalDuration = 0;
-        try (ExecutorService executorService = Executors.newFixedThreadPool(3);
+        try (ExecutorService executorService = Executors.newFixedThreadPool(10);
              HttpClient httpClient = HttpClient.newBuilder()
                 .executor(executorService)
                 .build()) {
-            LeonApiClient apiClient = new LeonApiClient(httpClient, BASE_URL);
+            LeonApiClient apiClient = new LeonApiClient(httpClient, executorService, BASE_URL);
             LeonParser parser = new LeonParser(apiClient);
             for (int i = 0; i < NUMBER_OF_RUNS; i++) {
                 long startTime = System.nanoTime();

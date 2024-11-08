@@ -5,6 +5,8 @@ import com.zemnitskiy.model.basemodel.Event;
 import com.zemnitskiy.model.result.MatchResult;
 import com.zemnitskiy.model.result.MarketResult;
 import com.zemnitskiy.model.result.RunnerResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -23,6 +25,7 @@ import java.util.concurrent.CompletableFuture;
  * @see MatchResult
  */
 public record EventRequest(LeonApiClient apiClient, Event event) implements AsyncRequest<MatchResult> {
+    private static final Logger logger = LoggerFactory.getLogger(EventRequest.class);
 
     /**
      * Executes the asynchronous fetch operation to retrieve detailed information about the event.
@@ -43,6 +46,7 @@ public record EventRequest(LeonApiClient apiClient, Event event) implements Asyn
     public CompletableFuture<MatchResult> fetch() {
         return apiClient.fetchEventDetails(event.id())
                 .thenApply(fetchedEvent -> {
+                    logger.debug("Fetched event: {}", event.id());
                     List<MarketResult> marketResults = fetchedEvent.markets().stream()
                             .map(market -> new MarketResult(
                                     market,

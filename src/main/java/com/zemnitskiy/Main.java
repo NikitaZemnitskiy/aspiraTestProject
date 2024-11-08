@@ -28,10 +28,8 @@ public class Main {
 
     public static void main(String[] args) {
         try (ExecutorService executorService = Executors.newFixedThreadPool(3);
-             HttpClient httpClient = HttpClient.newBuilder()
-                     .executor(executorService)
-                     .build()) {
-            LeonApiClient apiClient = new LeonApiClient(httpClient, BASE_URL);
+             HttpClient httpClient = HttpClient.newBuilder().build()) {
+            LeonApiClient apiClient = new LeonApiClient(httpClient, executorService, BASE_URL);
             LeonParser parser = new LeonParser(apiClient);
             parser.processData();
         } catch (Exception e) {

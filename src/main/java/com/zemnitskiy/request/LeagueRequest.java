@@ -4,6 +4,8 @@ import com.zemnitskiy.api.LeonApiClient;
 import com.zemnitskiy.model.basemodel.League;
 import com.zemnitskiy.model.result.LeagueResult;
 import com.zemnitskiy.model.result.MatchResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -23,6 +25,7 @@ import static com.zemnitskiy.Main.MATCH_COUNT;
  * @param sportName the name of the sport associated with the league
  */
 public record LeagueRequest(LeonApiClient apiClient, League league, String sportName) implements AsyncRequest<LeagueResult> {
+    private static final Logger logger = LoggerFactory.getLogger(LeagueRequest.class);
 
     /**
      * Executes the asynchronous fetch operation to retrieve league details and match results.
@@ -34,6 +37,7 @@ public record LeagueRequest(LeonApiClient apiClient, League league, String sport
     public CompletableFuture<LeagueResult> fetch() {
         return apiClient.fetchEventsForLeague(league)
                 .thenCompose(updatedLeague -> {
+                    logger.debug("Fetched league: {}", league.name());
                     List<CompletableFuture<MatchResult>> matchFutures = updatedLeague.events().stream()
                             .map(event -> new EventRequest(apiClient, event).fetch())
                             .limit(MATCH_COUNT)
@@ -41,6 +45,7 @@ public record LeagueRequest(LeonApiClient apiClient, League league, String sport
 
                     return CompletableFuture.allOf(matchFutures.toArray(new CompletableFuture[0]))
                             .thenApply(v -> {
+                                logger.debug("Compiling leagues");
                                 List<MatchResult> matchResults = matchFutures.stream()
                                         .map(CompletableFuture::join)
                                         .toList();
